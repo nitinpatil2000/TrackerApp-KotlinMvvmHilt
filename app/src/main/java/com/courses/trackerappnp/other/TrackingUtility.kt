@@ -7,8 +7,8 @@ import pub.devrel.easypermissions.EasyPermissions
 
 object TrackingUtility {
 
-    //android android sdk is less than api level 29 then ask fine and coarse location if the sdk is higher than the api level 29
-    //then ask the background, fine, coarse location.
+//    //android android sdk is less than api level 29 then ask fine and coarse location if the sdk is higher than the api level 29
+//    //then ask the background, fine, coarse location.
     fun hasLocationPermissions(context: Context) =
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             EasyPermissions.hasPermissions(
@@ -24,4 +24,6 @@ object TrackingUtility {
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             )
         }
+
+
 }
