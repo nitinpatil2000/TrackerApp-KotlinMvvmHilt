@@ -97,7 +97,7 @@ dependencies {
     implementation ("com.jakewharton.timber:timber:4.7.1")
 //
 //    // MPAndroidChart
-//    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
 }
 
