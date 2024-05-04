@@ -25,7 +25,7 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentRunBinding.inflate(layoutInflater)
         return binding.root
     }
