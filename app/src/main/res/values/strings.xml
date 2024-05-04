@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">TrackerAppNP</string>
     <string name="google_maps_key">AIzaSyCHbWhHU8kJGZVv3vKkxFPwlANajiTAEbo</string>
+    <string name="welcome_nplease_enter_your_name_and_weight">Welcome!\nPlease enter your name and weight.</string>
+    <string name="your_name">Your Name</string>
+    <string name="your_weight">Your Weight</string>
+    <string name="kg">kg</string>
+    <string name="continues">Continue</string>
+    <string name="sort_by">Sort by:</string>
+    <string-array name="filter_options">
+        <item>Date</item>
+        <item>Running Time</item>
+        <item>Distance</item>
+        <item>Average Speed</item>
+        <item>Calories Burned</item>
+    </string-array>
 </resources>
