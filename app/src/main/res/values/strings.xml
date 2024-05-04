@@ -6,4 +6,12 @@
     <string name="your_weight">Your Weight</string>
     <string name="kg">kg</string>
     <string name="continues">Continue</string>
+    <string name="sort_by">Sort by:</string>
+    <string-array name="filter_options">
+        <item>Date</item>
+        <item>Running Time</item>
+        <item>Distance</item>
+        <item>Average Speed</item>
+        <item>Calories Burned</item>
+    </string-array>
 </resources>
