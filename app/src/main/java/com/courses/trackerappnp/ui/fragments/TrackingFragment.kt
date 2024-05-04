@@ -1,5 +1,6 @@
 package com.courses.trackerappnp.ui.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +8,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.courses.trackerappnp.R
 import com.courses.trackerappnp.databinding.FragmentTrackingBinding
+import com.courses.trackerappnp.other.Constant.ACTION_START_OR_RESUME_SERVICE
+import com.courses.trackerappnp.service.TrackingService
 import com.google.android.gms.maps.GoogleMap
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
@@ -26,36 +29,46 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.btnToggleRun.setOnClickListener {
+            passedActionToService(ACTION_START_OR_RESUME_SERVICE)
+        }
+
         binding.mapView.onCreate(savedInstanceState)
         binding.mapView.getMapAsync {
             map = it
         }
     }
 
+    private fun passedActionToService(action:String){
+        Intent(requireContext(), TrackingService::class.java).also {
+            it.action = action
+            requireContext().startService(it)
+        }
+    }
 
     override fun onStart() {
         super.onStart()
-        binding.mapView?.onStart()
+        binding.mapView.onStart()
     }
 
     override fun onResume() {
         super.onResume()
-        binding.mapView?.onResume()
+        binding.mapView.onResume()
     }
 
     override fun onStop() {
         super.onStop()
-        binding.mapView?.onStop()
+        binding.mapView.onStop()
     }
 
     override fun onPause() {
         super.onPause()
-        binding.mapView?.onPause()
+        binding.mapView.onPause()
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        binding.mapView?.onLowMemory()
+        binding.mapView.onLowMemory()
     }
 
 
@@ -63,7 +76,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         super.onSaveInstanceState(outState)
 
         //not load the map everytime
-        binding.mapView?.onSaveInstanceState(outState)
+        binding.mapView.onSaveInstanceState(outState)
     }
 
     override fun onDestroyView() {

@@ -89,4 +89,5 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
+
 }
