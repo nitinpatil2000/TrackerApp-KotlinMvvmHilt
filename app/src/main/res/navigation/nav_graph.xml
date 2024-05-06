@@ -5,6 +5,12 @@
     android:id="@+id/nav_graph.xml"
     app:startDestination="@id/setupFragment">
 
+<!--    when user click the notification then open the tracking fragment so create a global action-->
+<!--    and set the single top is true means only single instance is create for this fragment-->
+    <action android:id="@+id/action_global_tracking_fragment"
+        app:destination="@id/trackingFragment"
+        app:launchSingleTop="true"/>
+
     <fragment
         android:id="@+id/runFragment"
         android:name="com.courses.trackerappnp.ui.fragments.RunFragment"

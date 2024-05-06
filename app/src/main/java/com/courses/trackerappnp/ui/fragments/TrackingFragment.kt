@@ -39,6 +39,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    //todo use tracking service method pass the action.
     private fun passedActionToService(action:String){
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action
