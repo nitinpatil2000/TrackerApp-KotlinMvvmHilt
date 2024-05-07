@@ -36,11 +36,11 @@ import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.model.LatLng
 import timber.log.Timber
 
-//typealias Polyline = MutableList<LatLng>
-//typealias Polylines = MutableList<Polyline>
+//todo used in the pathPoints i.e., ShortCut
+typealias Polyline = MutableList<LatLng>
+typealias Polylines = MutableList<Polyline>
 
 class TrackingService : LifecycleService() {
-
     /*
     todo get the location in the google map
        todo step 1 - define the variables in the companion object to check tracking is pause or start or add the location.
@@ -55,9 +55,10 @@ class TrackingService : LifecycleService() {
     private var isStartRun = true
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
+
     companion object {
         val isTracking = MutableLiveData<Boolean>()
-        val pathPoints = MutableLiveData<MutableList<MutableList<LatLng>>>()
+        val pathPoints = MutableLiveData<Polylines>()
     }
 
 
@@ -65,6 +66,7 @@ class TrackingService : LifecycleService() {
         isTracking.postValue(false)
         pathPoints.postValue(mutableListOf())
     }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
@@ -102,10 +104,12 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+
     private fun addEmptyPolyline() = pathPoints.value?.apply {
         add(mutableListOf())
         pathPoints.postValue(this)
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
+
 
     //todo remember path points is not null in this function so call this path points using let block in this location callback.
     private fun addPathPoint(location: Location?) {
@@ -117,6 +121,7 @@ class TrackingService : LifecycleService() {
             }
         }
     }
+
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -160,15 +165,14 @@ class TrackingService : LifecycleService() {
     todo step 1 is create notification channel
     todo step 2 is start foreground service using notification Builder
     todo step 3 create the pending intent to open the current activity
-    todo step 4 define the global navGraph
+    todo step 4 define the global action in the navGraph file
     todo step 5 handled this event in the main activity.
      */
+
 
     private fun startForegroundService() {
         addEmptyPolyline()
         isTracking.postValue(true)
-
-
 
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -189,6 +193,7 @@ class TrackingService : LifecycleService() {
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
     }
 
+
     private fun getMainActivityPendingIntent() =
         PendingIntent.getActivity(
             this,
@@ -197,8 +202,8 @@ class TrackingService : LifecycleService() {
                 it.action = ACTION_SHOW_TRACKING_FRAGMENT
             },
             PendingIntent.FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT         //when we launch pending intent and it is already exist then update this pending intent.
-
         )
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(notificationManager: NotificationManager) {
@@ -209,5 +214,4 @@ class TrackingService : LifecycleService() {
         )
         notificationManager.createNotificationChannel(channel)
     }
-
 }
