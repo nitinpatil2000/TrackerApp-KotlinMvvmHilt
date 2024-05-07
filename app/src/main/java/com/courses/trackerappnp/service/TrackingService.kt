@@ -87,15 +87,18 @@ class TrackingService : LifecycleService() {
         intent?.let {
             when (it.action) {
                 ACTION_START_OR_RESUME_SERVICE ->
-                    if (isStartRun) {
+                    if (isStartRun) {                                          //when it is start
                         startForegroundService()
                         isStartRun = false
-                    } else {
+                    } else {                                                  //when it is resumed
                         Timber.d("Service is Running...")
+                        startForegroundService()
                     }
 
-                ACTION_PAUSE_SERVICE ->
+                ACTION_PAUSE_SERVICE -> {                                      //when it is paused
                     Timber.d("Service is paused")
+                    pausedService()
+                }
 
                 ACTION_STOP_SERVICE ->
                     Timber.d("Service is stopped")
@@ -104,6 +107,9 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private fun pausedService(){
+        isTracking.postValue(false)
+    }
 
     private fun addEmptyPolyline() = pathPoints.value?.apply {
         add(mutableListOf())
@@ -123,6 +129,7 @@ class TrackingService : LifecycleService() {
     }
 
 
+    //todo in this method add the polylines in the path points
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             super.onLocationResult(result)

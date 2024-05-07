@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import com.courses.trackerappnp.R
 import com.courses.trackerappnp.databinding.FragmentTrackingBinding
 import com.courses.trackerappnp.other.Constant.ACTION_PAUSE_SERVICE
@@ -25,8 +26,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private var map: GoogleMap? = null
 
     //todo for draw the polyline in the map
-    private var isTracking = false
+    private var isTracking = false                                           //when your service is started or not.
     private var pathPoints = mutableListOf<Polyline>()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,64 +43,71 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         super.onViewCreated(view, savedInstanceState)
 
         binding.btnToggleRun.setOnClickListener {
-            passedActionToService(ACTION_START_OR_RESUME_SERVICE)
+            notifyForegroundService()
         }
 
         binding.mapView.onCreate(savedInstanceState)
         binding.mapView.getMapAsync {
             map = it
+            addAllPolyline()
         }
+
+        //todo observe the data in the tracking service
+        subScribeObservers()
     }
 
 
     //todo this fun is only connect the two last polylines of our polyline list
-    private fun addLatestPolyline() {
-        if (pathPoints.isNotEmpty() && pathPoints.last().size > 1) {   //todo we need to draw a line at least 2 points
-            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]
-            val lastLatLng = pathPoints.last().last()
-            val polyLineOptions = PolylineOptions()
+    private fun addLatestPolyline(){
+        if(pathPoints.isNotEmpty() && pathPoints.last().size > 1) {   //todo means at least two points then draw a line
+            val preLastLatLng = pathPoints.last()[pathPoints.last().size - 2]      //get the first coordinate  (2 bcz at least pt. to connect line)
+            val lastLatLng = pathPoints.last().last()                              // get the last coordinate
+            val polylineOptions = PolylineOptions()                                //draw a single line
                 .color(POLYLINE_COLOR)
                 .width(POLYLINE_WIDTH)
                 .add(preLastLatLng)
                 .add(lastLatLng)
 
-            map?.addPolyline(polyLineOptions)
+
+            map?.addPolyline(polylineOptions)                                      //add the line on the map
+
         }
     }
 
     //todo this function draws all of our polylines on the map again when we rotate the device
-    private fun addAllPolyline() {    //todo all polyline in the polylines.
-        for (polyline in pathPoints) {
+    private fun addAllPolyline(){
+        for (polyline in pathPoints){                            //get the loop and add the all polylines
             val polylineOptions = PolylineOptions()
                 .color(POLYLINE_COLOR)
                 .width(POLYLINE_WIDTH)
                 .addAll(polyline)
 
-            map?.addPolyline(polylineOptions)
+            map?.addPolyline(polylineOptions)                     //draw a multiple line
         }
     }
 
+
     //todo to show the line and zoom the camera immediately
-    private fun moveCameraToUser() {
-        if (pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
+    private fun updateCameraImmediately(){
+        if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {        //means at least one point in present
             map?.animateCamera(
                 CameraUpdateFactory.newLatLngZoom(
-                    pathPoints.last().last(),
+                    pathPoints.last().last(),                             //zoom the last point of the map
                     MAP_ZOOM
                 )
             )
         }
     }
 
-    private fun updateTracking(isTracking:Boolean) {
+    //todo showing the view when the isTracking is true or false
+    private fun updateViews(isTracking:Boolean){
         this.isTracking = isTracking
-
-        if (!isTracking) {
+        if(!isTracking){                                            //false means the tracking is pause
             binding.apply {
                 btnToggleRun.text = "Start"
                 btnFinishRun.visibility = View.VISIBLE
             }
-        } else {
+        }else{
             binding.apply {
                 btnToggleRun.text = "Stop"
                 btnFinishRun.visibility = View.GONE
@@ -106,11 +115,26 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
-    private fun toggleRun() {
-        if (isTracking) {  //if the service is running then user can be paused this service
-            passedActionToService(ACTION_PAUSE_SERVICE)
-        } else {    //but if the service is paused then user can start or resume the service. 
 
+    //todo notify the foreground service when it is paused or resume
+    private fun notifyForegroundService(){
+        if(isTracking){                                             //true means you can pause the tracking
+            passedActionToService(ACTION_PAUSE_SERVICE)
+        }else{                                                      //false means you can start or resume the service
+            passedActionToService(ACTION_START_OR_RESUME_SERVICE)
+        }
+    }
+
+    //todo notify the observers in the tracking service(isTracking, pathPoints) and update it
+    private fun subScribeObservers(){
+        TrackingService.isTracking.observe(viewLifecycleOwner) {
+            updateViews(it)
+        }
+
+        TrackingService.pathPoints.observe(viewLifecycleOwner) {
+            pathPoints = it
+            addLatestPolyline()                                                   //when data is added then add the single line
+            updateCameraImmediately()                                          //update the camera immediately
         }
     }
 
