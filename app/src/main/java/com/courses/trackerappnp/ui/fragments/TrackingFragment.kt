@@ -1,6 +1,7 @@
 package com.courses.trackerappnp.ui.fragments
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +11,11 @@ import com.courses.trackerappnp.R
 import com.courses.trackerappnp.databinding.FragmentTrackingBinding
 import com.courses.trackerappnp.other.Constant.ACTION_START_OR_RESUME_SERVICE
 import com.courses.trackerappnp.service.TrackingService
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.PolylineOptions
 
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private var _binding:FragmentTrackingBinding? = null
@@ -39,6 +44,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
     }
 
+    //todo use tracking service method pass the action.
     private fun passedActionToService(action:String){
         Intent(requireContext(), TrackingService::class.java).also {
             it.action = action
