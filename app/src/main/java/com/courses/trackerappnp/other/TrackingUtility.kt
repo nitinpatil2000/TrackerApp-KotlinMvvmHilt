@@ -1,15 +1,11 @@
 package com.courses.trackerappnp.other
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.NotificationManager.IMPORTANCE_LOW
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.courses.trackerappnp.other.Constant.NOTIFICATION_CHANNEL_ID
-import com.courses.trackerappnp.other.Constant.NOTIFICATION_CHANNEL_NAME
 import pub.devrel.easypermissions.EasyPermissions
+import java.util.concurrent.TimeUnit
 
 object TrackingUtility {
 
@@ -32,4 +28,32 @@ object TrackingUtility {
                 Manifest.permission.POST_NOTIFICATIONS
             )
         }
+
+
+    fun getFormattedStopwatchTime(ms: Long, isTracking: Boolean = false): String {
+        var milliseconds = ms           //define the local variable bcz we need to calculate the hours, minutes,and seconds in the time
+        val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
+        milliseconds -= TimeUnit.MILLISECONDS.toMillis(hours)
+
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds)
+        milliseconds -= TimeUnit.MILLISECONDS.toMillis(minutes)
+
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds)
+        milliseconds -= TimeUnit.MILLISECONDS.toMillis(seconds)
+
+        if (!isTracking) {
+            return "${if (hours < 10) "0" else ""}$hours:" +          //return the time in HH:MM:SS if it is less than 10 simply append the 0 before the time(01)
+                    "${if (minutes < 10) "0" else ""}$minutes:" +
+                    "${if (seconds < 10) "0" else ""}$seconds"
+        }
+
+        //i want to show the milliseconds in 2 digits
+        milliseconds /= 10          //ex milliseconds is 150 / 10 = 15
+
+        return "${if (hours < 10) "0" else ""}$hours:" +
+                "${if (minutes < 10) "0" else ""}$minutes:" +
+                "${if (seconds < 10) "0" else ""}$seconds:" +
+                "${if (milliseconds < 10) "0" else ""}$milliseconds"
+
+    }
 }

@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import com.courses.trackerappnp.R
 import com.courses.trackerappnp.databinding.FragmentTrackingBinding
 import com.courses.trackerappnp.other.Constant.ACTION_PAUSE_SERVICE
@@ -14,6 +13,7 @@ import com.courses.trackerappnp.other.Constant.ACTION_START_OR_RESUME_SERVICE
 import com.courses.trackerappnp.other.Constant.MAP_ZOOM
 import com.courses.trackerappnp.other.Constant.POLYLINE_COLOR
 import com.courses.trackerappnp.other.Constant.POLYLINE_WIDTH
+import com.courses.trackerappnp.other.TrackingUtility
 import com.courses.trackerappnp.service.Polyline
 import com.courses.trackerappnp.service.TrackingService
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -28,6 +28,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     //todo for draw the polyline in the map
     private var isTracking = false                                           //when your service is started or not.
     private var pathPoints = mutableListOf<Polyline>()
+
+    //todo for the time
+    private var currentTimeInMillis = 0L
 
 
     override fun onCreateView(
@@ -126,15 +129,22 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     }
 
     //todo notify the observers in the tracking service(isTracking, pathPoints) and update it
-    private fun subScribeObservers(){
+    private fun subScribeObservers() {
         TrackingService.isTracking.observe(viewLifecycleOwner) {
-            updateViews(it)
+            updateViews(isTracking)
         }
 
         TrackingService.pathPoints.observe(viewLifecycleOwner) {
             pathPoints = it
             addLatestPolyline()                                                   //when data is added then add the single line
-            updateCameraImmediately()                                          //update the camera immediately
+            updateCameraImmediately()                                             //update the camera immediately
+        }
+
+        //todo for the time
+        TrackingService.timeRunInMillis.observe(viewLifecycleOwner) {
+            currentTimeInMillis = it
+            val formatterTime = TrackingUtility.getFormattedStopwatchTime(currentTimeInMillis, true)
+            binding.tvTimer.text = formatterTime
         }
     }
 
