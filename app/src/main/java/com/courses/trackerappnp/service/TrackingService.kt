@@ -17,7 +17,6 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import com.courses.trackerappnp.R
 import com.courses.trackerappnp.other.Constant.ACTION_PAUSE_SERVICE
-import com.courses.trackerappnp.other.Constant.ACTION_SHOW_TRACKING_FRAGMENT
 import com.courses.trackerappnp.other.Constant.ACTION_START_OR_RESUME_SERVICE
 import com.courses.trackerappnp.other.Constant.ACTION_STOP_SERVICE
 import com.courses.trackerappnp.other.Constant.FASTEST_LOCATION_INTERVAL
@@ -26,7 +25,6 @@ import com.courses.trackerappnp.other.Constant.NOTIFICATION_CHANNEL_ID
 import com.courses.trackerappnp.other.Constant.NOTIFICATION_CHANNEL_NAME
 import com.courses.trackerappnp.other.Constant.NOTIFICATION_ID
 import com.courses.trackerappnp.other.TrackingUtility
-import com.courses.trackerappnp.ui.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -34,27 +32,37 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.model.LatLng
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 //todo used in the pathPoints i.e., ShortCut
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
+@AndroidEntryPoint
 class TrackingService : LifecycleService() {
     private var isStartRun = true
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private val timeRunInSeconds =
+        MutableLiveData<Long>()                //todo showing this time in seconds in notification
 
-    private val timeRunInSeconds = MutableLiveData<Long>()                //showing this time in seconds in notification
+    @Inject
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    @Inject
+    lateinit var baseNotificationBuilder: NotificationCompat.Builder
+
+    private lateinit var currentNotificationBuilder: NotificationCompat.Builder
 
     companion object {
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
 
-        //todo use this variable in the tracking fragment using class name so define in companion object
+        //todo use this variable in the tracking fragment to showing the milliseconds in the screen.
         val timeRunInMillis = MutableLiveData<Long>()
     }
 
@@ -75,27 +83,31 @@ class TrackingService : LifecycleService() {
         postInitialValue()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
+        //todo show the base notification builder and there are some changes to show the current notification
+        currentNotificationBuilder = baseNotificationBuilder
+
         //todo it is only run when it is true
         isTracking.observe(this) {
             updateLocationTracking(it)
+            updateNotificationTrackingState(it)
         }
     }
 
 
-    //perform 3 action first is service start or resume, second is pause, third is stop.
-    //when onStartCommand function start the service and handled the action passed to the activity or fragment.
+    //todo define on start command to perform the action on service(start, resume, stop, pause).
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
                 ACTION_START_OR_RESUME_SERVICE ->
-                    if (isStartRun) {                                          //when it is start
+                    if (isStartRun) {                                          //todo when it is start
                         startForegroundService()
                         isStartRun = false
-                    } else {                                                  //when it is resumed
+                    } else {                                                  //todo when it is resumed
                         Timber.d("Service is Running...")
                         startTimer()
                     }
-                ACTION_PAUSE_SERVICE -> {                                      //when it is paused
+
+                ACTION_PAUSE_SERVICE -> {                                      //todo when it is paused
                     Timber.d("Service is paused")
                     pausedService()
                 }
@@ -124,7 +136,7 @@ class TrackingService : LifecycleService() {
         addEmptyPolyline()
         isTracking.postValue(true)
 
-        //todo call the timer funtion
+        //todo call the timer function
         startTimer()
 
         val notificationManager =
@@ -134,28 +146,15 @@ class TrackingService : LifecycleService() {
             createNotificationChannel(notificationManager)
         }
 
-        val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false)  //to prevent the notification is disappears when user click the notification
-            .setOngoing(true) //cant swap the notification away
-            .setSmallIcon(R.drawable.ic_directions_run_black)
-            .setContentTitle("Tracking App")
-            .setContentText("00:00:00")
-//            todo final is pending intent to open the the tracking fragment and attached the action.
-            .setContentIntent(getMainActivityPendingIntent())
+        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
-        startForeground(NOTIFICATION_ID, notificationBuilder.build())
+        //todo update the notification
+        timeRunInSeconds.observe(this){
+            val updateNotification = currentNotificationBuilder
+                .setContentText(TrackingUtility.getFormattedStopwatchTime(it * 1000L))
+            notificationManager.notify(NOTIFICATION_ID, updateNotification.build())
+        }
     }
-
-
-    private fun getMainActivityPendingIntent() =
-        PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).also {
-                it.action = ACTION_SHOW_TRACKING_FRAGMENT
-            },
-            PendingIntent.FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT         //when we launch pending intent and it is already exist then update this pending intent.
-        )
 
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -167,8 +166,6 @@ class TrackingService : LifecycleService() {
         )
         notificationManager.createNotificationChannel(channel)
     }
-
-
 
 
     /*
@@ -195,6 +192,7 @@ class TrackingService : LifecycleService() {
             pathPoints.value?.apply {
                 last().add(position)
                 pathPoints.postValue(this)
+
             }
         }
     }
@@ -262,18 +260,60 @@ class TrackingService : LifecycleService() {
 
         CoroutineScope(Dispatchers.Main).launch {
             while(isTracking.value!!){
-            //calculate the difference between current and previous started time ex stopwatch start at 1 seconds and second time start at 5 second.(1-5)
+                //todo calculate the difference between current and previous started time ex stopwatch start at 1 seconds and second time start at 5 second.(1-5)
                 beginningTime = System.currentTimeMillis() - timeStarted
                 timeRunInMillis.postValue(totalTimeRun + beginningTime)
 
-                if(timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L){         //greater than or equal to 1 seconds then update the counter
+                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L) {         //todo greater than or equal to 1 seconds then update the counter
                     timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
                     lastSecondTimeStamp += 1000L
                 }
                 delay(50L)
             }
-            //add the the current beginning time in the total-time run and add the value in this time run in milliseconds
+            //todo add the the current beginning time in the total-time run and add the value in this time run in milliseconds
             totalTimeRun += beginningTime
         }
+    }
+
+
+    //TODO when tracking is start then user pause the service with action and when tracking is pause then user resume or start the service with action
+    private fun updateNotificationTrackingState(isTracking: Boolean) {
+        val notificationActionText = if (isTracking) "Pause" else "Resume"
+        val pendingIntent =
+            if (isTracking) {
+                val pauseIntent = Intent(this, TrackingService::class.java).apply {
+                    action = ACTION_PAUSE_SERVICE
+                }
+                PendingIntent.getService(
+                    this,
+                    1,
+                    pauseIntent,
+                    PendingIntent.FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT
+                )
+            } else {
+                val resumeIntent = Intent(this, TrackingService::class.java).apply {
+                    action = ACTION_START_OR_RESUME_SERVICE
+                }
+                PendingIntent.getService(
+                    this,
+                    2,
+                    resumeIntent,
+                    PendingIntent.FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT
+                )
+            }
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        //todo update notification with each second either is pause or resume with attached action
+        currentNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
+            isAccessible = true                                                          //todo allow to modify the notification
+            set(currentNotificationBuilder, ArrayList<NotificationCompat.Action>())      //todo multiple action so define arraylist
+        }
+
+        currentNotificationBuilder = baseNotificationBuilder
+            .addAction(R.drawable.ic_pause_black, notificationActionText, pendingIntent)
+
+        notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
+
     }
 }
