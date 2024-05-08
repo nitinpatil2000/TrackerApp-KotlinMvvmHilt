@@ -30,30 +30,32 @@ object TrackingUtility {
         }
 
 
-    fun getFormattedStopwatchTime(ms: Long, isTracking: Boolean = false): String {
-        var milliseconds = ms           //define the local variable bcz we need to calculate the hours, minutes,and seconds in the time
+    fun getFormattedStopwatchTime(ms: Long, includeMillis: Boolean = false): String {
+        var milliseconds = ms           //todo define the local variable bcz we need to calculate the hours, minutes,and seconds in the time
         val hours = TimeUnit.MILLISECONDS.toHours(milliseconds)
-        milliseconds -= TimeUnit.MILLISECONDS.toMillis(hours)
+        milliseconds -= TimeUnit.HOURS.toMillis(hours)
 
         val minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds)
-        milliseconds -= TimeUnit.MILLISECONDS.toMillis(minutes)
+        milliseconds -= TimeUnit.MINUTES.toMillis(minutes)
 
         val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds)
-        milliseconds -= TimeUnit.MILLISECONDS.toMillis(seconds)
 
-        if (!isTracking) {
-            return "${if (hours < 10) "0" else ""}$hours:" +          //return the time in HH:MM:SS if it is less than 10 simply append the 0 before the time(01)
-                    "${if (minutes < 10) "0" else ""}$minutes:" +
-                    "${if (seconds < 10) "0" else ""}$seconds"
+
+        if (!includeMillis) {
+            return "${if(hours < 10) "0" else ""}$hours:" +         //todo return the time in HH:MM:SS if it is less than 10 simply append the 0 before the time(01)
+                    "${if(minutes < 10) "0" else ""}$minutes:" +
+                    "${if(seconds < 10) "0" else ""}$seconds"
         }
 
-        //i want to show the milliseconds in 2 digits
-        milliseconds /= 10          //ex milliseconds is 150 / 10 = 15
+        //todo i want to show the milliseconds in 2 digits
 
-        return "${if (hours < 10) "0" else ""}$hours:" +
-                "${if (minutes < 10) "0" else ""}$minutes:" +
-                "${if (seconds < 10) "0" else ""}$seconds:" +
-                "${if (milliseconds < 10) "0" else ""}$milliseconds"
+        milliseconds -= TimeUnit.SECONDS.toMillis(seconds)
+        milliseconds /= 10          //todo ex milliseconds is 150 / 10 = 15
+
+        return "${if(hours < 10) "0" else ""}$hours:" +
+                "${if(minutes < 10) "0" else ""}$minutes:" +
+                "${if(seconds < 10) "0" else ""}$seconds:" +
+                "${if(milliseconds < 10) "0" else ""}$milliseconds"
 
     }
 }

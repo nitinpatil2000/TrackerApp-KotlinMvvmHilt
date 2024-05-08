@@ -47,11 +47,12 @@ typealias Polylines = MutableList<Polyline>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
     private var isStartRun = true
-    private val timeRunInSeconds =
-        MutableLiveData<Long>()                //todo showing this time in seconds in notification
+    private var killedService = false
 
     @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    private val timeRunInSeconds = MutableLiveData<Long>()                //todo showing this time in seconds in notification
 
     @Inject
     lateinit var baseNotificationBuilder: NotificationCompat.Builder
@@ -93,6 +94,14 @@ class TrackingService : LifecycleService() {
         }
     }
 
+    private fun killService() {
+        killedService = true
+        isStartRun = true
+        pausedService()
+        postInitialValue()
+        stopForeground(true)
+        stopSelf()
+    }
 
     //todo define on start command to perform the action on service(start, resume, stop, pause).
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -112,8 +121,11 @@ class TrackingService : LifecycleService() {
                     pausedService()
                 }
 
-                ACTION_STOP_SERVICE ->
+                ACTION_STOP_SERVICE ->{
                     Timber.d("Service is stopped")
+                    killService()
+                }
+
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -146,13 +158,16 @@ class TrackingService : LifecycleService() {
             createNotificationChannel(notificationManager)
         }
 
+        //todo show the first original notification
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
-        //todo update the notification
-        timeRunInSeconds.observe(this){
-            val updateNotification = currentNotificationBuilder
-                .setContentText(TrackingUtility.getFormattedStopwatchTime(it * 1000L))
-            notificationManager.notify(NOTIFICATION_ID, updateNotification.build())
+        //todo set the data in the notification and notifies it.
+        timeRunInSeconds.observe(this) {
+            if(!killedService) {
+                val notification = currentNotificationBuilder
+                    .setContentText(TrackingUtility.getFormattedStopwatchTime(it * 1000L))
+                notificationManager.notify(NOTIFICATION_ID, notification.build())
+            }
         }
     }
 
@@ -264,7 +279,8 @@ class TrackingService : LifecycleService() {
                 beginningTime = System.currentTimeMillis() - timeStarted
                 timeRunInMillis.postValue(totalTimeRun + beginningTime)
 
-                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L) {         //todo greater than or equal to 1 seconds then update the counter
+                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L) {
+                    //todo greater than or equal to 1 seconds then update the counter
                     timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
                     lastSecondTimeStamp += 1000L
                 }
@@ -310,10 +326,12 @@ class TrackingService : LifecycleService() {
             set(currentNotificationBuilder, ArrayList<NotificationCompat.Action>())      //todo multiple action so define arraylist
         }
 
-        currentNotificationBuilder = baseNotificationBuilder
-            .addAction(R.drawable.ic_pause_black, notificationActionText, pendingIntent)
-
-        notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
+        //todo shows the updated notification with text and update the content of the service in the foreground service fun
+        if(!killedService){                                                             //todo killed service is false
+            currentNotificationBuilder = baseNotificationBuilder
+                .addAction(R.drawable.ic_pause_black, notificationActionText, pendingIntent)
+            notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
+        }
 
     }
 }
