@@ -10,7 +10,7 @@ data class Run (
     var timestamp:Long = 0L,  //convert this date into long and store it.
     var averageSpeedKMH: Float  = 0f,
     var distanceInMeters: Int = 0,
-    var timeInMillis: Long = 0L ,  //end time millis is very accurate.
+    var timeInMillis: Long = 0L ,  //end time millis is very accurate in long.
     var caloriesBurned: Int = 0
 ){
     @PrimaryKey(autoGenerate = true)

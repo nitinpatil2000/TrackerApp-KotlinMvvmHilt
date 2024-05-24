@@ -8,11 +8,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import com.courses.trackerappnp.R
+import com.courses.trackerappnp.adapter.RunAdapter
 import com.courses.trackerappnp.databinding.FragmentRunBinding
 import com.courses.trackerappnp.other.Constant.REQUEST_CODE_LOCATION_PERMISSION
 import com.courses.trackerappnp.other.TrackingUtility
+import com.courses.trackerappnp.ui.viewmodels.TrackingViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
@@ -21,6 +26,9 @@ import pub.devrel.easypermissions.EasyPermissions
 class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionCallbacks {
     private var _binding: FragmentRunBinding? = null
     private val binding get() = _binding!!
+    private lateinit var runAdapter: RunAdapter
+    private val viewModel by viewModels<TrackingViewModel>()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,10 +45,25 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
 
         requestPermission()
 
+        setUpRecyclerView()
+
         binding.fab.setOnClickListener {
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
         }
+
+        viewModel.runSortByDate.observe(viewLifecycleOwner){
+            runAdapter.submitList(it)
+        }
     }
+
+    private fun setUpRecyclerView(){
+        runAdapter = RunAdapter()
+        binding.rvRuns.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = runAdapter
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermission() {
@@ -93,6 +116,4 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
-
-
 }
